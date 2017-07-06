@@ -1,0 +1,111 @@
+---
+title: "Chapter 3 Exercise 2"
+author: "Dee Muralidharan"
+date: "July 3, 2017"
+output:
+  html_document: default
+  pdf_document: default
+---
+0: Load the data in RStudio
+Save the data set as a CSV file called titanic_original.csv and load it in RStudio into a data frame.
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyr)
+working_titanic<-read.csv("titanic_original.csv", header=TRUE, stringsAsFactors = FALSE)
+working_titanic_1<-read.csv("titanic_original.csv", header=TRUE, stringsAsFactors = FALSE)
+```
+
+**1: Port of embarkation**
+The embarked column has some missing values, which are known to correspond to passengers who actually embarked at Southampton. Find the missing values and replace them with S. (Caution: Sometimes a missing value might be read into R as a blank or empty string.)
+
+```{r}
+vector_space <- c("S","Q","C")
+working_titanic$embarked[working_titanic$embarked != vector_space]<-"S"
+working_titanic_1$embarked[working_titanic$embarked != vector_space]<-"S"
+write.csv (working_titanic,"titanic_working.csv")
+```
+
+You'll notice that a lot of the values in the Age column are missing. While there are many ways to fill these missing values, using the mean or median of the rest of the values is quite common in such cases.
+
+**Part A: Calculate the mean of the Age column and use that value to populate the missing values**
+
+```{r cars}
+
+mean_age<- round(mean(working_titanic$age, na.rm = TRUE), digits=1)
+vector_na<- c(NA)
+working_titanic$age[is.na(working_titanic$age)]<- mean_age
+```
+
+**Part B: Think about other ways you could have populated the missing values in the age column. Why would you pick any of those over the mean (or not)?**
+
+```{r}
+## Used the codes below to find the average age of Male and Female separately while ignoring the age of Children
+
+working_titanic_1<- working_titanic_1 %>% mutate(female_pass_age= ifelse(grepl("female", sex),ifelse((age>15),age, NA), NA))
+working_titanic_1<-working_titanic_1%>% mutate(male_pass_age = ifelse(grepl("^male", sex),ifelse((age>15),age, NA), NA))
+mean_age_female<- round(mean(working_titanic_1$female_pass_age, na.rm= TRUE), digits = 1)
+mean_age_male<- round(mean(working_titanic_1$male_pass_age, na.rm= TRUE), digits = 1)
+
+## Used the coding below to fill the Adult male/Female NA's with their respective averages 
+
+working_titanic_1<-working_titanic_1 %>% mutate(female_na=ifelse(grepl("female", sex), ifelse(is.na(age),mean_age_female,female_pass_age),NA))
+working_titanic_1<-working_titanic_1 %>% mutate(male_na=ifelse(grepl("^male", sex), ifelse(is.na(age),mean_age_male,male_pass_age),NA))     
+library(tidyr)
+
+##Coding to unite the male_na and female_na columns to make them into 1 final age                                     
+
+working_titanic_1$female_na[is.na(working_titanic_1$female_na)]<-0
+working_titanic_1$male_na[is.na(working_titanic_1$male_na)]<- 0
+working_titanic_1=transform(working_titanic_1,finale_age=male_na+female_na)
+
+## Coding to remove all ages above 15 from the age column
+
+working_titanic_1$age[working_titanic_1$age >15 ]<-0
+working_titanic_1$age[is.na(working_titanic_1$age) ]<-0
+
+## Code to combine the ages and come up with the final altered Age column
+
+working_titanic_1=transform(working_titanic_1,age = age+ finale_age)
+
+## Removing the extra Columns for a cleaner looking file
+
+working_titanic_1 <- working_titanic_1[1:14]
+```
+ This is probably an overkill but wanted to push myself to do complicated things and see what I could accomplish
+ 
+ I reckon this is probably the most tedious way to accomplish 
+-a. omit all values that is below 15 years in Age- this removes the skew
+-b Find the averages ages of all the females above 15 years in age
+-c Find the average ages of all the males above 15 years in age
+-d Replace all age cells with NA for Female, satisfying the condition sex=female and age > 15, with the mean female age (roughly 32.4 years). Then replace all age cells with NA for male ,satisfying the condition sex=male and age > 15, with the mean male age (~32.8 years).
+
+```{r}
+## Dummy-For better presentation 
+```
+
+**3: Lifeboat**
+You're interested in looking at the distribution of passengers in different lifeboats, but as we know, many passengers did not make it to a boat :-( This means that there are a lot of missing values in the boat column. Fill these empty slots with a dummy value e.g. the string 'None' or 'NA'
+```{r}
+working_titanic <- working_titanic %>% mutate (boat = sub("^$",NA, boat))
+write.csv (working_titanic,"titanic_working.csv")
+
+```
+I struggled to find the right code to specify the first occurance of "^$"- Can you please point me to a cheet sheet containig such search functions.
+
+**4: Cabin**
+You notice that many passengers don't have a cabin number associated with them.
+Does it make sense to fill missing cabin numbers with a value?
+What does a missing value here mean?
+You have a hunch that the fact that the cabin number is missing might be a useful indicator of survival. Create a new column has_cabin_number which has 1 if there is a cabin number, and 0 otherwise.
+```{r}
+working_titanic<-working_titanic %>% mutate(has_cabin_number=ifelse(grepl("^$", cabin),0,1))
+
+```
+**6: Submit the project on Github**
+Include your code, the original data as a CSV file titanic_original.csv, and the cleaned up data as a CSV file called titanic_clean.csv.
+```{r}
+file.remove("titanic_working_1.csv")
+file.remove("titanic_working.csv")
+write.csv (working_titanic,"titanic_clean.csv.")
+```
+
